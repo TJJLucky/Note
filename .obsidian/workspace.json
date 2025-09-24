@@ -1,0 +1,219 @@
+{
+  "main": {
+    "id": "f5f9ab011e106370",
+    "type": "split",
+    "children": [
+      {
+        "id": "0cca2e022744e3fa",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "3b8b1202310e54e0",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "代办事项.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "代办事项"
+            }
+          }
+        ],
+        "stacked": true
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "f1492f4a0f457671",
+    "type": "split",
+    "children": [
+      {
+        "id": "1538655321c59da9",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "29ee8393c522ec1a",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical",
+                "autoReveal": false
+              },
+              "icon": "lucide-folder-closed",
+              "title": "文件列表"
+            }
+          },
+          {
+            "id": "ff7bd87a447448de",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              },
+              "icon": "lucide-search",
+              "title": "搜索"
+            }
+          },
+          {
+            "id": "95a2599ba63bbdc2",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {},
+              "icon": "lucide-bookmark",
+              "title": "书签"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 200
+  },
+  "right": {
+    "id": "cdfec3457e928c55",
+    "type": "split",
+    "children": [
+      {
+        "id": "af4b3ad201b99697",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "ffb54e4913e4898a",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "file": "代办事项.md",
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-coming-in",
+              "title": "代办事项 的反向链接列表"
+            }
+          },
+          {
+            "id": "c420fd642f3aa6d8",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "file": "Arithmetic Solution/树的历遍/树的历遍方式(后续历遍栈未完).md",
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-going-out",
+              "title": "树的历遍方式(后续历遍栈未完) 的出链列表"
+            }
+          },
+          {
+            "id": "04c0b338e001f058",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-tags",
+              "title": "标签"
+            }
+          },
+          {
+            "id": "eb9fa87deadd36f3",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "file": "DataBaseMS/SQL基础知识.md",
+                "followCursor": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-list",
+              "title": "SQL基础知识 的大纲"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "switcher:打开快速切换": false,
+      "graph:查看关系图谱": false,
+      "canvas:新建白板": false,
+      "daily-notes:打开/创建今天的日记": false,
+      "templates:插入模板": false,
+      "command-palette:打开命令面板": false,
+      "bases:创建新数据库": false
+    }
+  },
+  "active": "29ee8393c522ec1a",
+  "lastOpenFiles": [
+    "README.md",
+    "代办事项.md",
+    "Arithmetic Solution/picture/Snipaste_2024-01-11_12-02-01.png",
+    "DataBaseMS/SQL基础知识.md",
+    "Arithmetic Solution/P1241括号序列.md",
+    "Arithmetic Solution/P1164-动态规划.md",
+    "Arithmetic Solution/p1010-幂次方.md",
+    "Arithmetic Solution/多重，01，完全背包.md",
+    "Arithmetic Solution/动态规划求最大子段和.md",
+    "Arithmetic Solution/！！！！！！别人的题解.md",
+    "Arithmetic Solution/picture/image-20240301202925167.png",
+    "Arithmetic Solution/picture/Snipaste_2024-01-10_15-28-40.png",
+    "未命名.md",
+    "未命名.base",
+    "未命名 1.base",
+    "未命名 1.md",
+    "Arithmetic Solution/树的历遍/树的历遍方式(后续历遍栈未完).md",
+    "Arithmetic Solution/树的历遍/P1827-美国血统.md",
+    "未命名.canvas",
+    "2025-09-18.md",
+    "Keli/2025-09-11.md",
+    "Arithmetic Solution/CDQ分治.md",
+    "Arithmetic Solution/P1228-地毯填补.md",
+    "Keli/未命名.md",
+    "Keli/sources/Pasted image 20250911221027.png",
+    "Keli/sources/Pasted image 20250911220909.png",
+    "Keli/sources/Pasted image 20250911220852.png",
+    "Keli/sources",
+    "Keli",
+    "Arithmetic Solution/P1928-外星密码.md",
+    "DataBaseMS/sources/Pasted image 20250910133236.png",
+    "DataBaseMS/sources",
+    "Pasted image 20250910133106.png",
+    "Untitled.md",
+    "Arithmetic Solution/picture/v2-b051cb0dd19b3f9131aa1aee17290a87_720w.png",
+    "2025-09-10.md",
+    "DataBaseMS",
+    "Untitled.canvas",
+    "Untitled.base",
+    "Untitled 2.base",
+    "Untitled 1.base",
+    "Arithmetic Solution/P4913-二叉树深度.md",
+    "Arithmetic Solution/P3612-Secret Cow Code S.md"
+  ]
+}
