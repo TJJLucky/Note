@@ -2,5 +2,11 @@
   "promptDelete": false,
   "showLineNumber": true,
   "newLinkFormat": "relative",
-  "attachmentFolderPath": "./sources"
+  "attachmentFolderPath": "./sources",
+  "pdfExportSettings": {
+    "pageSize": "Letter",
+    "landscape": false,
+    "margin": "0",
+    "downscalePercent": 100
+  }
 }

@@ -102,7 +102,22 @@ VARCHAR性能较差(会计算空间)
 | YEAR      | 1   | 1901-2155                                    | YYYY                | 年份           |
 | DATETIME  | 8   | 1000-01-01 00:00:00:00 至 9999-12-31 23:59:59 | YYYY-MM-DD HH:MM:SS | 混合日期和时间      |
 | TIMESTAMP | 4   | 1970-01-01 00:00:01 至 2038-01-19 03:14:07    | YYYY-MM-DD HH:MM:SS | 混合日期和时间值,时间戳 |
-
-
-
-
+DLL-表操作-修改
+- 添加字段
+```SQL
+ALTER TABLE 表名 ADD 字段名 类型(长度) [COMMENT 注释] [约束];
+```
+- 修改数据类型
+```SQL
+ALTER 表名 MODIFY 字段名 新数据类型(长度);
+```
+- 修改字段名和字段类型
+```SQL
+ALTER TABLE 表名 CHANGE 旧字段名 新字段名 类型(长度)[COMMENT 注释][约束];
+```
+DLL-表操作-修改
+- 删除字段
+```SQL
+ALTER TABLE 表名 DROP 字段名
+```
+ 
