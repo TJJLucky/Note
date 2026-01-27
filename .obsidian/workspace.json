@@ -8,13 +8,17 @@
         "type": "tabs",
         "children": [
           {
-            "id": "3b8b1202310e54e0",
+            "id": "bc30bd5da99ed6f9",
             "type": "leaf",
             "state": {
-              "type": "empty",
-              "state": {},
+              "type": "markdown",
+              "state": {
+                "file": "代办事项.md",
+                "mode": "source",
+                "source": false
+              },
               "icon": "lucide-file",
-              "title": "新标签页"
+              "title": "代办事项"
             }
           }
         ],
@@ -157,48 +161,51 @@
   },
   "left-ribbon": {
     "hiddenItems": {
+      "bases:新建数据库": false,
       "switcher:打开快速切换": false,
       "graph:查看关系图谱": false,
       "canvas:新建白板": false,
       "daily-notes:打开/创建今天的日记": false,
       "templates:插入模板": false,
-      "command-palette:打开命令面板": false,
-      "bases:创建新数据库": false
+      "command-palette:打开命令面板": false
     }
   },
   "active": "29ee8393c522ec1a",
   "lastOpenFiles": [
-    "README.md",
-    "未命名.canvas",
-    "未命名.md",
+    "使用React搭建一个Shopify应用/Prisma",
+    "使用React搭建一个Shopify应用",
     "NextJs/服务端组件与客户端组件.md",
+    "未命名.canvas",
     "NextJs/累计布局偏移原因（字体）.md",
+    "NextJs/累计布局偏移CLS.md",
     "NextJs/命令式编程与声明式编程.md",
     "NextJs/前端无障碍.md",
-    "NextJs/网络应用的构建模块.md",
-    "DataBaseMS/SQL基础知识.md",
+    "NextJs/Web 渲染模式.md",
+    "NextJs/iframe客户端组件嵌套服务端组件.md",
     "NextJs/字体子集（Font Subsetting）.md",
+    "NextJs/网络应用的构建模块.md",
+    "NextJs/服务端组件和客户端组件的调用.md",
+    "CSS/Vanilla extract css.md",
+    "CSS/CSS后处理器PostCSS.md",
+    "CSS/CSS Modules.md",
+    "DataBaseMS/SQL基础知识.md",
+    "MIPS指令集/终端输出.md",
+    "CSS",
+    "MIPS指令集/数据声明.md",
+    "代办事项.md",
+    "README.md",
+    "未命名.md",
     "Moodle/未命名.base",
     "Moodle",
     "NextJs/字体和图片.md",
     "NextJs/文件夹路由.md",
-    "NextJs/服务端组件和客户端组件的调用.md",
-    "NextJs/累计布局偏移CLS.md",
-    "NextJs/iframe客户端组件嵌套服务端组件.md",
-    "NextJs/Web 渲染模式.md",
-    "代办事项.md",
     "NextJs",
     "未命名 1",
-    "MIPS指令集/终端输出.md",
-    "MIPS指令集/数据声明.md",
     "MIPS指令集",
     "Arithmetic Solution/P1228-地毯填补.md",
     "Arithmetic Solution/P1241括号序列.md",
     "Arithmetic Solution/P1164-动态规划.md",
     "Arithmetic Solution/p1010-幂次方.md",
-    "Arithmetic Solution/CDQ分治.md",
-    "Arithmetic Solution/动态规划求最大子段和.md",
-    "Arithmetic Solution/！！！！！！别人的题解.md",
     "Arithmetic Solution/picture/v2-b051cb0dd19b3f9131aa1aee17290a87_720w.png",
     "Arithmetic Solution/picture/Snipaste_2024-01-11_12-02-01.png",
     "Arithmetic Solution/picture/image-20240301202925167.png",
@@ -209,9 +216,7 @@
     "Keli/sources/Pasted image 20250911220909.png",
     "Keli/sources/Pasted image 20250911220852.png",
     "Keli/sources",
-    "Keli",
     "DataBaseMS/sources/Pasted image 20250910133236.png",
-    "DataBaseMS/sources",
     "Pasted image 20250910133106.png",
     "Untitled.canvas"
   ]
