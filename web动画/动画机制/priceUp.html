@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+
+<body>
+    <div class="count"></div>
+    <div class="count2"></div>
+    <div class="count3">0</div>
+
+    <button id="btn">开始累加</button>
+</body>
+
+<script>
+    const count3_dom = document.querySelector('.count3');
+    const btn = document.querySelector('#btn');
+
+    // 把数字格式化成 $1,113.00
+    const moneyFmt = new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'USD',
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+    });
+
+    // 缓动：越到后面越慢（接近你日志那种效果）
+    function easeOutExpo(x) {
+        return x === 1 ? 1 : 1 - Math.pow(2, -10 * x);
+    }
+
+    /**
+     * 数字累加动画
+     * @param {HTMLElement} el
+     * @param {number} from
+     * @param {number} to
+     * @param {{duration?:number, easing?:(x:number)=>number, format?:(n:number)=>string}} opts
+     */
+    function animateNumber(el, from, to, opts = {}) {
+        const duration = opts.duration ?? 1200;
+        const easing = opts.easing ?? easeOutExpo;
+        const format = opts.format ?? ((n) => String(n));
+        const currentAnimateNum = animateNum++;
+        let rafId = 0;
+        const start = performance.now();
+
+        function frame(now) {
+            // 计算进度（0~1）
+            // 在多少帧内完成动画
+            const t = Math.min(1, (now - start) / duration);
+            const p = easing(t);
+            // 根据缓动函数，累加计算当前值
+            // p 范围是 0~1
+            const value = from + (to - from) * p;
+            el.textContent = format(value);
+
+            if (t < 1) {
+                rafId = requestAnimationFrame(frame);
+            } else {
+                // 确保最终精确落在目标值（避免浮点误差）
+                el.textContent = format(to);
+                // 其实这一行是“多余”的，但没有害处
+                /**
+                 * 为什么是多余的？
+                 * requestAnimationFrame 是一次性的。浏览器执行当前 frame 函数时，这个 rafId 代表的任务就已经从浏览器的队列里移除并执行了。
+                 * 既然你没有在 else 里再次调用 requestAnimationFrame，循环自然就停止了。去取消一个“已经执行中的”或“已经过期的”ID 其实没有任何效果（浏览器会
+                */
+                // cancelAnimationFrame(rafId);
+                console.log('animation cancelled', currentAnimateNum);
+            }
+        }
+
+        rafId = requestAnimationFrame(frame);
+    }
+
+    // 示例：954 -> 1113，输出 $xxx.xx
+    let currentValue = 0;
+    let valueGap = 1000;
+    let animateNum = 0;
+    btn.addEventListener('click', () => {
+        // 每次点击启动一个新的requestAnimationFrame 动画循环
+        // 如果快速点击5次，会同时存在5个动画循环,在同一帧里,都会同时写同一个DOM,最后执行的那个动画写入就成为这一帧结束时看到的值,叠加动画,最后一次点击的结果会覆盖前面的
+        // 导致:数字会“抖动/跳来跳去”（取决于同一帧里谁最后写入）
+        // “并发写同一个 DOM 的竞态结果”。
+
+        // from 用的是“逻辑值 currentValue”，不是“屏幕上正在显示的值”
+        // 导致:突然跳变：因为新动画第一帧就从 from=200 开始算，但 可能还在 37。
+        // 或者看起来“卡顿/回拉”：被多个动画交替写入造成。
+
+        // 资源与边界问题
+        // 点很多次 = 同时挂很多个 rAF 回调，CPU 占用上升，页面掉帧。
+        // 你在 animateNumber 里 cancelAnimationFrame(rafId) 只取消“最后一次安排的那一个 id”，但已经并发的其它动画并不会被取消（因为它们各自有自己的 rafId，你没有保存外部引用去 cancel）。
+        animateNumber(count3_dom, currentValue, currentValue + valueGap, {
+            duration: 1500,
+            format: (n) => moneyFmt.format(n),
+            easing: easeOutExpo,
+        });
+        currentValue += valueGap;
+    });
+    /**
+     * 策略 A：每次点击取消上一次动画，并从“当前显示值”平滑过渡到新目标
+     * 特点：永远只有一个动画在跑；连点时不会抖动；视觉很顺。
+    */
+    /**
+     * 策略 B：连点累积（队列/累计目标），但仍然只跑一个动画循环
+     * 特点：可以做到“每次点击都不丢”，并且不会并发；实现略复杂（需要一个运行中的状态机）。 
+     */
+</script>
+
+</html>

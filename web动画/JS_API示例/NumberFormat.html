@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Intl.NumberFormat 全解</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f2f5;
+            color: #333;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+        }
+
+        h2 {
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+            margin-top: 40px;
+            color: #2980b9;
+        }
+
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+            gap: 20px;
+        }
+
+        .card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            border-left: 5px solid #3498db;
+        }
+
+        .card h3 {
+            margin-top: 0;
+            font-size: 16px;
+            color: #7f8c8d;
+        }
+
+        .result {
+            font-size: 24px;
+            font-weight: bold;
+            color: #2c3e50;
+            margin: 10px 0;
+        }
+
+        .code {
+            background: #282c34;
+            color: #abb2bf;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: Consolas, monospace;
+            font-size: 12px;
+            overflow-x: auto;
+        }
+
+        .keyword {
+            color: #c678dd;
+        }
+
+        .string {
+            color: #98c379;
+        }
+
+        .prop {
+            color: #e06c75;
+        }
+
+        .comment {
+            color: #5c6370;
+            font-style: italic;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>Intl.NumberFormat 实例演示</h1>
+    <p style="text-align: center;">原生 JavaScript 数字格式化神器，无需第三方库。</p>
+
+    <div id="app"></div>
+
+    <script>
+        const app = document.getElementById('app');
+
+        // 辅助函数：用于在页面上渲染示例
+        function renderSection(title, examples) {
+            const section = document.createElement('div');
+            section.innerHTML = `<h2>${title}</h2><div class="card-grid"></div>`;
+            const grid = section.querySelector('.card-grid');
+
+            examples.forEach(ex => {
+                const card = document.createElement('div');
+                card.className = 'card';
+
+                // 执行格式化
+                const formatter = new Intl.NumberFormat(ex.locale, ex.options);
+                const result = formatter.format(ex.number);
+
+                // 生成代码字符串用于展示
+                const optsStr = JSON.stringify(ex.options, null, 4)
+                    .replace(/"([^"]+)":/g, '<span class="prop">$1</span>:')
+                    .replace(/"([^"]+)"/g, '<span class="string">"$1"</span>');
+
+                card.innerHTML = `
+                    <h3>${ex.desc}</h3>
+                    <div class="result">${result}</div>
+                    <div class="code">
+                        <span class="keyword">new</span> Intl.NumberFormat(<span class="string">'${ex.locale}'</span>, ${optsStr})
+                        <br>
+                        <span class="comment">// 输入: ${ex.number}</span>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+
+            app.appendChild(section);
+        }
+
+        // ==========================================
+        // 1. 基础与地区差异 (Locales)
+        // ==========================================
+        renderSection('1. 地区差异 (Locales)', [
+            {
+                desc: '美国 (小数点是点，千分位是逗号)',
+                number: 123456.789,
+                locale: 'en-US',
+                options: {}
+            },
+            {
+                desc: '德国 (小数点是逗号，千分位是点)',
+                number: 123456.789,
+                locale: 'de-DE',
+                options: {}
+            },
+            {
+                desc: '印度 (特殊的数字分组: Lakh/Crore)',
+                number: 123456789,
+                locale: 'en-IN',
+                options: {}
+            },
+            {
+                desc: '中文数字 (汉字)',
+                number: 123456.789,
+                locale: 'zh-Hans-CN-u-nu-hanidec', // 扩展标记
+                options: {}
+            }
+        ]);
+
+        // ==========================================
+        // 2. 货币格式化 (Currency)
+        // ==========================================
+        renderSection('2. 货币格式化 (Currency)', [
+            {
+                desc: '美元 (默认符号)',
+                number: 2500.50,
+                locale: 'en-US',
+                options: { style: 'currency', currency: 'USD' }
+            },
+            {
+                desc: '人民币 (显示名称)',
+                number: 2500.50,
+                locale: 'zh-CN',
+                options: { style: 'currency', currency: 'CNY', currencyDisplay: 'name' }
+            },
+            {
+                desc: '日元 (自动去除小数位，因为日元没有分)',
+                number: 2500.50,
+                locale: 'ja-JP',
+                options: { style: 'currency', currency: 'JPY' }
+            },
+            {
+                desc: '会计格式 (负数用括号)',
+                number: -2500.50,
+                locale: 'en-US',
+                options: { style: 'currency', currency: 'USD', currencySign: 'accounting' }
+            }
+        ]);
+
+        // ==========================================
+        // 3. 单位格式化 (Units)
+        // ==========================================
+        renderSection('3. 单位格式化 (Units)', [
+            {
+                desc: '速度 (公里/小时)',
+                number: 120,
+                locale: 'zh-CN',
+                options: { style: 'unit', unit: 'kilometer-per-hour' }
+            },
+            {
+                desc: '存储容量 (Gigabyte)',
+                number: 500,
+                locale: 'en-US',
+                options: { style: 'unit', unit: 'gigabyte', unitDisplay: 'short' }
+            },
+            {
+                desc: '温度 (摄氏度 - 窄格式)',
+                number: 26.5,
+                locale: 'zh-CN',
+                options: { style: 'unit', unit: 'celsius', unitDisplay: 'narrow' }
+            },
+            {
+                desc: '百分比 (自动乘100)',
+                number: 0.453,
+                locale: 'en-US',
+                options: { style: 'percent', minimumFractionDigits: 1 }
+            }
+        ]);
+
+        // ==========================================
+        // 4. 紧凑记数法 (Compact Notation) - 适合仪表盘
+        // ==========================================
+        renderSection('4. 紧凑记数法 (Compact Notation)', [
+            {
+                desc: '英文短格式 (K, M, B)',
+                number: 123456789,
+                locale: 'en-US',
+                options: { notation: 'compact', compactDisplay: 'short' }
+            },
+            {
+                desc: '中文短格式 (万, 亿)',
+                number: 123456789,
+                locale: 'zh-CN',
+                options: { notation: 'compact', compactDisplay: 'short' }
+            },
+            {
+                desc: '长格式 (文字描述)',
+                number: 1500000,
+                locale: 'en-US',
+                options: { notation: 'compact', compactDisplay: 'long' }
+            },
+            {
+                desc: '科学记数法',
+                number: 123456,
+                locale: 'en-US',
+                options: { notation: 'scientific' }
+            }
+        ]);
+
+        // ==========================================
+        // 5. 精度与数字控制 (Precision)
+        // ==========================================
+        renderSection('5. 精度控制 (Precision)', [
+            {
+                desc: '固定2位小数 (补零)',
+                number: 12,
+                locale: 'en-US',
+                options: { minimumFractionDigits: 2, maximumFractionDigits: 2 }
+            },
+            {
+                desc: '限制有效数字 (Significant Digits)',
+                number: 12345.6789,
+                locale: 'en-US',
+                options: { maximumSignificantDigits: 3 }
+            },
+            {
+                desc: '整数部分最少位数 (补零)',
+                number: 5,
+                locale: 'en-US',
+                options: { minimumIntegerDigits: 3 }
+            }
+        ]);
+
+        // ==========================================
+        // 6. 高级：formatToParts (自定义样式)
+        // ==========================================
+        // 这是一个特殊的例子，不使用通用渲染函数
+        (function renderAdvanced() {
+            const section = document.createElement('div');
+            section.innerHTML = `<h2>6. 高级：formatToParts (自定义样式)</h2><div class="card-grid"></div>`;
+            const grid = section.querySelector('.card-grid');
+            const card = document.createElement('div');
+            card.className = 'card';
+
+            const number = 1234.56;
+            const fmt = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
+            const parts = fmt.formatToParts(number);
+
+            // 我们可以遍历 parts 数组，给不同的部分加上不同的 CSS 类
+            // parts 结构: [{type: "currency", value: "$"}, {type: "integer", value: "1"}, ...]
+
+            const styledHtml = parts.map(part => {
+                if (part.type === 'currency') return `<span style="color:red; font-size:1.5em">${part.value}</span>`;
+                if (part.type === 'fraction') return `<span style="color:blue; font-size:0.8em">${part.value}</span>`;
+                return part.value;
+            }).join('');
+
+            card.innerHTML = `
+                <h3>分离部分进行独立着色</h3>
+                <div class="result">${styledHtml}</div>
+                <div class="code">
+                    <span class="keyword">const</span> parts = fmt.formatToParts(1234.56);<br>
+                    <span class="comment">// 返回数组，可自由拼接 HTML</span>
+                </div>
+            `;
+            grid.appendChild(card);
+            app.appendChild(section);
+        })();
+
+    </script>
+</body>
+
+</html>

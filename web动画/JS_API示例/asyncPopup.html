@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Refactored Structure</title>
+    <style>
+        /* 4. 样式分离 */
+        .popup-overlay {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0.9);
+            padding: 20px;
+            background-color: lightgray;
+            border: 1px solid black;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+
+            /* 9. 动画与过渡处理: 初始状态 hidden */
+            opacity: 0;
+            display: none;
+            transition: opacity 0.5s ease, transform 0.5s ease, background-color 1s ease;
+            z-index: 1000;
+        }
+
+        .popup-overlay.active {
+            /* 激活状态 */
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1);
+            display: block;
+            /* 辅助 js 逻辑，虽然显示主要靠 opacity */
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app"></div>
+</body>
+<script>
+    // 1. 使用 ES6 Class 
+    class Popup {
+        constructor() {
+            this.el = null;
+            this.resolveHandler = null;
+            this.isOpened = false; // 5. 内部状态管理
+            this._init();
+        }
+
+        // 私有初始化方法
+        _init() {
+            this.el = document.createElement("div");
+            this.el.className = "popup-overlay";
+            // 8. WAI-ARIA 无障碍支持
+            this.el.setAttribute('role', 'dialog');
+            this.el.setAttribute('aria-modal', 'true');
+            // 7. 动态内容插槽
+            this.contentSlot = document.createElement("div");
+            this.contentSlot.className = "popup-content";
+            this.contentSlot.innerText = "Default Content"; // 默认内容
+            this.el.appendChild(this.contentSlot);
+
+            const closeButton = document.createElement("button");
+            closeButton.innerText = "Close";
+            // 事件绑定
+            closeButton.addEventListener("click", () => this.close());
+
+            this.el.appendChild(closeButton);
+            // 3. 构造时只创建内存对象，不应该直接 append 到 body，除非是模态框必须在最顶层
+            // 如果是其他情况，应该通过外部调用 render 方法来决定挂载位置
+            document.body.appendChild(this.el);
+        }
+
+        show(content) {
+            // 5. 自身的健壮性检查：如果已经打开，返回一个以拒绝的 Promise 或之前的 Promise
+            /**
+             * 防止多次调用 show 导致状态混乱
+             * 如果没有这段检查，
+             * 1. 连续调用 show() 会创建多个 Promise。
+             * 2. this.resolveHandler 会被最后一次 show() 的 resolve 覆盖。
+             * 3. 之前的 Promise 的 resolve 丢失，那些 Promise 将永远处于 pending 状态（内存泄漏）。
+             * 4. close() 只能结束最后一次的 show()，之前的 await 永远不会返回。
+             */
+            if (this.isOpened) {
+                console.warn("Popup is already open");
+                return Promise.reject("Already open");
+            }
+
+            // 7. 动态内容更新
+            if (content) {
+                this.contentSlot.innerText = content;
+            }
+
+            this.isOpened = true;
+
+            // [测试代码]: 强制让 JS 执行时间拉长，挤占当前帧的渲染窗口
+            // 如果开启下面的阻塞，配合双层 rAF 可能会观察到“时间戳合并”现象，导致动画失效。
+            const start = performance.now();
+            while (performance.now() - start < 1) {
+                console.log(performance.now())
+            } // 阻塞约1帧的时间（16ms）
+
+            // 此时浏览器已经到了渲染时间点，第一层 rAF 会在当前帧执行
+            // 此时 display 和 active 同帧生效，动画失效
+
+            // 还在js执行的阶段
+            this.el.style.display = 'block';
+            console.log("display set to block", performance.now());
+
+            // 监听动画启动事件，用于验证动画是否生效
+            const onTransitionStart = () => {
+                console.log("✅ Transition Started! 动画成功触发");
+                this.el.removeEventListener('transitionrun', onTransitionStart);
+            };
+            this.el.addEventListener('transitionrun', onTransitionStart);
+
+            // 旧写法 1：强制重绘 (同步，有效但暴力)
+            // void this.el.offsetHeight;
+            // this.el.classList.add("active");
+
+            // 旧写法 2：单层 requestAnimationFrame (不稳定，可能在同一帧合并导致无动画)
+            /*
+            // 这里再 样式重绘 之前执行
+            requestAnimationFrame(() => {
+                this.el.classList.add("active");
+            });
+            */
+            // 新写法：双层 requestAnimationFrame (推荐，符合渲染管线)
+            // requestAnimationFrame 返回一个整数 ID (如 1, 2, 3...)。
+            // 这只是浏览器发给你的一个"挂号牌"，用于取消 (cancelAnimationFrame)。
+            // 它会自动递增，与帧数无关，也与时间戳无关。
+            const rafId = requestAnimationFrame((t1) => {
+                // [Frame N]: 第一层 rAF 回调
+                // 
+                // 🚨 纠正：修改 .style.display = 'block' 并**不会**立即触发回流(Layout)或多跑几次 Event Loop。
+                // 它只是把 DOM 树标记为 "Dirty"。
+                // 如果单层 rAF 生效了，是因为**Timing（时机）巧合**：
+                // 当 JS 执行这一行时，刚好错过了 Frame N 的安检时间（rAF 截止），
+                // 导致这个 rAF 回调被分配到了 Frame N+1 执行。
+                // 
+                // 不要在这里写 add active，除非你想赌浏览器的概率。
+                // this.el.classList.add("active");
+                this.el.classList.add("active");
+                console.log("active class added in 1st frame", "计划执行时间", t1, "当前时间", performance.now(), "下一帧时间:", t1 + (1000 / 60));
+                if (t1 < performance.now()) {
+                    console.log("第一层 rAF 回调执行时间晚于计划时间，浏览器渲染被阻塞", performance.now() - t1, "ms");
+                }
+                this.el.style.backgroundColor = "blue";
+                console.log("第二帧时间距离当前时间约", (t1 + (1000 / 60)) - performance.now(), "ms");
+                requestAnimationFrame((t2) => {
+                    // [Frame N+1]: 第二层 rAF 回调 (确保逻辑最稳健的写法)
+                    console.log("active class added in 2nd frame", "计划执行时间", t2, "当前时间", performance.now());
+                    console.log("两个rAF回调时间差约", t2 - t1, "ms");
+                    this.el.style.backgroundColor = "red";
+
+                    if (t2 - t1 == 0) {
+
+                    }
+                    if (t2 < performance.now()) {
+                        console.log("第二层 rAF 回调执行时间晚于计划时间，浏览器渲染被阻塞", performance.now() - t2, "ms");
+                    }
+                    // [Frame N+1]: 第二层 rAF 回调
+                    // 这里已经是下一帧了！Frame N 已经“画”完了。
+                    // 此时添加 active，浏览器从 Frame N 的状态 (opacity:0) -> Frame N+1 的状态 (opacity:1)
+                    // 这就产生了 diff，从而触发 transition。
+                    // this.el.classList.add("active");
+                    // console.log("active class added in 2nd frame");
+                });
+
+            });
+
+
+            // --- 修改结束 ---
+
+            /**
+             * 知识点：为什么需要 双层 requestAnimationFrame？
+             * 
+             * 流程解析：
+             * 1. [宏任务/交互事件]: 用户点击按钮。
+             *    - 执行 JS，设置 this.el.style.display = 'block'。
+             *    - 注册 rAF1。
+             * 
+             * 2. [Frame N 渲染]: 浏览器准备画第一帧。
+             *    - 执行 rAF1 回调：注册 rAF2 (排队到下一帧)。
+             *    - 执行 Style/Layout/Paint：屏幕呈现 display:block 但 opacity:0 的元素。
+             * 
+             * 3. [Frame N+1 渲染]: 浏览器准备画第二帧。
+             *    - 执行 rAF2 回调：this.el.classList.add("active") (opacity -> 1)。
+             *    - 执行 Style：浏览器对比 Frame N (op:0) 和 Frame N+1 (op:1) 的样式差异。
+             *    - 触发 Transition 过渡动画。
+             * 
+             * 核心本质：
+             * Transition 的触发条件是 **“上一帧的计算样式”** 与 **“当前帧的计算样式”** 不同。
+             * - 状态 A (Frame N): display:block + opacity:0 (挂载并渲染初始状态)
+             * - 状态 B (Frame N+1): display:block + opacity:1 (应用激活状态)
+             */
+
+            return new Promise((resolve) => {
+                // 保存 resolve 以便外部 close 时调用
+                this.resolveHandler = resolve;
+                // 当执行resovle()时，Promise 状态变为 fulfilled，await 语句继续执行
+            });
+        }
+
+        close() {
+            if (!this.isOpened) return;
+
+            this.isOpened = false;
+            // 9. 动画处理：移除 active 类触发淡出
+            this.el.classList.remove("active");
+
+            // 监听动画结束，完全移除 display
+            const onTransitionEnd = () => {
+                console.log("Transition ended, hiding popup");
+                this.el.style.display = 'none';
+                this.el.removeEventListener('transitionend', onTransitionEnd);
+            };
+            this.el.addEventListener('transitionend', onTransitionEnd);
+
+            if (this.resolveHandler) {
+                this.resolveHandler("Pop-up closed and returned value");
+                this.resolveHandler = null; // 清理引用
+            }
+        }
+        sleep(ms) {
+            const start = performance.now();
+            while (performance.now() - start < ms) { }
+        }
+    }
+
+    // 按钮逻辑也可以封装，或者直接在业务代码里写
+    class TriggerButton {
+        constructor(popupInstance, container) {
+            this.popup = popupInstance;
+            this.button = document.createElement("button");
+            this.button.innerText = "Click Me";
+            this.container = container || document.body;
+
+            this.button.addEventListener("click", this._handleClick.bind(this));
+            this.render();
+        }
+
+        async _handleClick() {
+            console.log("Button clicked");
+            // UI 交互优化：防止用户重复点击
+            /**
+             * 如果多次重复点击会造成
+             * 1. 逻辑错误：多次触发 show()，导致 resolveHandler 被覆盖。
+             * 2. 内存泄漏：之前的点击产生的 Promise 永远无法 resolve。
+             * 3. 状态不一致：UI 可能只关闭一次，但后台有多个挂起的 await。
+            */
+            this.button.disabled = true;
+
+            try {
+                // 7. 传递动态内容
+                const result = await this.popup.show("Dynamic content from click!");
+                console.log(result);
+            } catch (e) {
+                console.log("Operation cancelled or failed:", e);
+            } finally {
+                this.button.disabled = false;
+            }
+        }
+
+        render() {
+            this.container.appendChild(this.button);
+        }
+    }
+
+    // 使用
+    const popup = new Popup();
+    const appContainer = document.getElementById('app');
+
+    // 3. 依赖注入：将 popup 实例注入给 button
+    new TriggerButton(popup, appContainer);
+
+</script>
+
+</html>

@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+</head>
+
+<body>
+    <div class="swiper-wrap">
+        <div class="swiper-content">
+        </div>
+    </div>
+</body>
+<style>
+    * {
+        padding: 0;
+        margin: 0;
+        box-sizing: border-box;
+    }
+
+    :root {
+        --swiper-item-width: 360px;
+        --swiper-item-height: 100px;
+    }
+
+    body {
+        width: 100vw;
+        height: 100vh;
+        background-color: #f0f0f0;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
+
+    .swiper-wrap {
+        height: var(--swiper-item-height);
+        width: var(--swiper-item-width);
+        background-color: #ffffff;
+
+        position: relative;
+        overflow: hidden;
+        margin: 0 auto;
+
+        display: flex;
+
+    }
+
+    .swiper-wrap .swiper-content {
+        width: fit-content;
+        height: var(--swiper-item-height);
+        display: flex;
+        justify-content: space-around;
+        align-items: center;
+
+        /* 3D透视 */
+        transform-style: preserve-3d;
+        /* 透视距离  */
+        perspective: 500px;
+
+    }
+
+    .swiper-wrap .swiper-item {
+        height: var(--swiper-item-height);
+        width: var(--swiper-item-width);
+        background-color: #707070;
+    }
+
+    .swiper-wrap .swiper-item:nth-child(odd) {
+        background-color: #a0a0a0;
+    }
+</style>
+<script>
+    const swiperContent = document.querySelector('.swiper-content');
+    const swiperWrap = document.querySelector('.swiper-wrap');
+    const data = [1, 2, 3, 4];
+    const totalItems = data.length + 1; // 多一个用于无缝衔接
+    let itemWidth;
+    let contentWidth;
+    let currentIndex = 0;
+    let intervalValue;
+    let offset = 0;
+    let rafId;
+    const speed = 4; // 每次移动的像素数
+    function createSwiperItem(content) {
+        const item = document.createElement('div');
+        item.classList.add('swiper-item');
+        item.textContent = content;
+        return item;
+    }
+    function initSwiperContent(swiperContent) {
+        swiperContent.innerHTML = null;
+        for (let i = 0; i < 2; i++) {
+            data.forEach(num => {
+                const item = createSwiperItem(num);
+                swiperContent.appendChild(item);
+            });
+        }
+    }
+    function initializeSwiper(swiperContent) {
+        const firstSwiperItem = swiperContent.querySelector('.swiper-item');
+        itemWidth = firstSwiperItem.offsetWidth;
+        contentWidth = itemWidth * data.length;
+
+        function step() {
+            // 左移的距离
+            offset += speed;
+            // 多一个元素,马上无动画跳回第一张图片
+            if (offset >= contentWidth) {
+                // 在第二轮开始时,无动画跳回第一张图片位置
+                // 衔接下一张图片
+                console.log(offset)
+                offset = 0;
+            }
+            swiperContent.style.transform = `translate3d(${-offset}px, 0, 0)`;
+            rafId = requestAnimationFrame(step);
+        }
+
+        function start() {
+            if (rafId) cancelAnimationFrame(rafId);
+            rafId = requestAnimationFrame(step);
+        }
+        function stop() {
+            if (rafId) cancelAnimationFrame(rafId);
+        }
+        // 1000ms 后执行,数据先改变,然后再渲染
+        start();
+
+        swiperWrap.addEventListener('mouseenter', () => {
+            stop();
+        });
+        swiperWrap.addEventListener('mouseleave', () => {
+            start();
+        });
+    }
+
+    initSwiperContent(swiperContent);
+    initializeSwiper(swiperContent);
+</script>
+
+</html>

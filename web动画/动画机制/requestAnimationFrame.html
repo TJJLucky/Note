@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+
+<body>
+    <div class="count"></div>
+    <div class="count2"></div>
+    <div class="count3">0</div>
+</body>
+<script>
+    count_dom = document.querySelector('.count');
+    count2_dom = document.querySelector('.count2');
+    count3_dom = document.querySelector('.count3');
+    console.log('A');
+    /*
+    *在同一个 <script> 任务里：直到这段脚本执行完(循环完)、调用栈清空后，浏览器才有机会进入渲染阶段。
+    */
+    for (let i = 0; i < 1000; i++) {
+        count_dom.innerText = i;
+        void count_dom.offsetWidth; // 强制回流（重绘）
+        /**
+         * 注册1000个动画帧回调
+         * 不立即执行，而是等当前任务执行完后、浏览器渲染前调用
+         * 通常会在下一次绘制之前，浏览器会把你在同一帧内注册的 rAF 回调全部按注册顺序执行一遍：
+         */
+        requestAnimationFrame((t) => {
+            count2_dom.innerText = i;
+            /**
+             *  也就是：下一帧到来时，依次执行这 1000 个回调（会看到刷出 1000 条 rAF < timestamp >）。
+             *  这 1000 个回调的 t（时间戳）大概率相同或非常接近，因为它们属于同一帧的回调批次。
+             *  由于你在循环里反复写 innerText，真正能被绘制到屏幕上的通常只有最后一次写入的值 999（中间 0~998 没有机会逐帧显示出来）。
+             */
+            /**
+             *  你并没有“用 rAF 做 1000 帧动画”，而是“在一帧里塞了 1000 个回调等着下一帧统一执行”。 
+             */
+
+            console.log('rAF', t, i)
+        });
+
+    }
+
+    let rafId;
+    const goal = 999;
+    function tick(t) {
+        /**
+         * 递归调用 requestAnimationFrame 实现逐帧更新
+         * 每一帧只注册一个回调，等这一帧执行完后、浏览器渲染前，才会注册下一帧的回调
+         * @param {DOMHighResTimeStamp} t 当前帧的时间戳
+         */
+        count3_dom.innerText = Number(count3_dom.innerText) + 1;
+        console.log('rAF tick', t, rafId, Number(count3_dom.innerText));
+        if (Number(count3_dom.innerText) < 1000) {
+            // 递归调用
+            // 每两帧执行一次
+            rafId = requestAnimationFrame(() => requestAnimationFrame(tick)); // 下一帧再更新一次
+        } else {
+            if (rafId) cancelAnimationFrame(rafId);
+        }
+    }
+
+    rafId = requestAnimationFrame(tick)
+    console.log('B');
+</script>
+
+</html>

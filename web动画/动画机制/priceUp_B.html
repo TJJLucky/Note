@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+
+<body>
+    <div class="count">0</div>
+
+    <button id="btn">开始累加</button>
+</body>
+
+<script>
+    const count3_dom = document.querySelector('.count');
+    const btn = document.querySelector('#btn');
+
+    // 把数字格式化成 $1,113.00
+    const moneyFmt = new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'USD',
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 2,
+    });
+
+    // 缓动：越到后面越慢
+    function easeOutExpo(x) {
+        return x === 1 ? 1 : 1 - Math.pow(2, -10 * x);
+    }
+
+    function parseMoney(text) {
+        const n = Number(String(text).replace(/[^0-9.-]+/g, ''));
+        return Number.isFinite(n) ? n : 0;
+    }
+
+    /**
+     * 单段数字动画：from -> to
+     * 返回：cancel 函数
+     */
+    function animateNumber(el, from, to, opts = {}) {
+        const duration = opts.duration ?? 1200;
+        const easing = opts.easing ?? easeOutExpo;
+        const format = opts.format ?? ((n) => String(n));
+        const onDone = opts.onDone ?? (() => { });
+
+        let rafId = 0;
+        const start = performance.now();
+
+        function frame(now) {
+            const t = Math.min(1, (now - start) / duration);
+            const p = easing(t);
+            const value = from + (to - from) * p;
+
+            el.textContent = format(value);
+
+            if (t < 1) {
+                rafId = requestAnimationFrame(frame);
+            } else {
+                el.textContent = format(to); // 落点精确
+                onDone();
+            }
+        }
+
+        rafId = requestAnimationFrame(frame);
+        return () => cancelAnimationFrame(rafId);
+    }
+
+    /**
+     * 策略 B：连点累积（队列），但同一时刻只有一个动画在跑
+     * 语义：每点一次，就“+ valueGap”并排队；动画一段段播完
+     */
+    const valueGap = 1000;
+    let pendingSteps = 0;          // 点击累计次数（队列长度）
+    let isAnimating = false;
+    let cancelCurrent = null;
+
+    function pumpQueue() {
+        if (isAnimating) return;
+        if (pendingSteps <= 0) return;
+
+        pendingSteps -= 1;
+        isAnimating = true;
+
+        // 每一段都从“当前屏幕显示值”出发，避免跳变
+        const from = parseMoney(count3_dom.textContent);
+        const to = from + valueGap;
+
+        // 理论上此策略不会并发；这里保险起见
+        if (cancelCurrent) cancelCurrent();
+
+        cancelCurrent = animateNumber(count3_dom, from, to, {
+            duration: 800,
+            format: (n) => moneyFmt.format(n),
+            easing: easeOutExpo,
+            onDone: () => {
+                isAnimating = false;
+                // 继续消费剩余点击
+                pumpQueue();
+            }
+        });
+    }
+
+    btn.addEventListener('click', () => {
+        pendingSteps += 1;  // 入队
+        pumpQueue();        // 若空闲则启动
+    });
+</script>
+
+</html>

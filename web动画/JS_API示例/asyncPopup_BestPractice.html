@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>High Performance Popup (Best Practice)</title>
+    <style>
+        /* 
+         * 最佳实践：使用 CSS 3D Transform 和 Opacity 进行动画
+         * 避免触发布局回流 (Reflow) 和 重绘 (Repaint)
+         */
+        .popup-overlay {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            /* 初始状态：稍微缩小，制造弹出的弹性感 */
+            transform: translate(-50%, -50%) scale(0.9);
+            padding: 24px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+
+            /* 初始透明度为 0，且不占位 (display: none via JS logics) */
+            opacity: 0;
+
+            /* 
+             * 告知浏览器这些属性将要变化，提示 GPU 提前分配图层 
+             * 这是一个性能优化的 Hint
+             */
+            will-change: transform, opacity, background-color;
+
+            /* 定义过渡效果 */
+            transition: opacity 0.3s ease-out, transform 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28), background-color 0.3s ease;
+            z-index: 1000;
+        }
+
+        /* 激活状态：完全不透明，缩放恢复正常 */
+        .popup-overlay.active {
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1);
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app"></div>
+</body>
+<script>
+    class Popup {
+        constructor() {
+            this.el = null;
+            this.resolveHandler = null;
+            this.isOpened = false;
+            this._init();
+        }
+
+        _init() {
+            // 创建 DOM 结构
+            this.el = document.createElement("div");
+            this.el.className = "popup-overlay";
+            this.el.setAttribute('role', 'dialog');
+            this.el.setAttribute('aria-modal', 'true');
+
+            this.contentSlot = document.createElement("div");
+            this.contentSlot.style.marginBottom = "15px";
+            this.el.appendChild(this.contentSlot);
+
+            const closeBtn = document.createElement("button");
+            closeBtn.innerText = "Close Popup";
+            closeBtn.addEventListener("click", () => this.close());
+            this.el.appendChild(closeBtn);
+
+            document.body.appendChild(this.el);
+        }
+
+        show(content) {
+            if (this.isOpened) return Promise.reject("Popup already opened");
+
+            this.contentSlot.innerText = content || "Hello World";
+            this.isOpened = true;
+
+            // --- 核心渲染逻辑 (The Rendering Core) ---
+
+            // 1. [Sync Task] 立即设置 display: block
+            // 此时元素被加入渲染树，但 Opacity 为 0，用户不可见。
+            // 这仅仅是修改了 DOM 属性，尚未绘制像素。
+
+            // 验证辅助：监听真正的动画启动
+            this.el.addEventListener('transitionstart', () => {
+                console.log(`%c[Event] Animation Started at ${performance.now().toFixed(1)}ms`, "color: green; font-weight: bold");
+            }, { once: true });
+
+            console.log(`[Sync Task] Set display: block. Time: ${performance.now().toFixed(1)}ms`);
+            // 阻塞
+            this.sleep(16);
+            // 2. [Frame N] 进入渲染管线前的调度
+            // requestAnimationFrame 保证回调在“下一帧的渲染计算”之前执行。
+            requestAnimationFrame((t1) => {
+                console.log(`[Frame 1] rAF Executed. Browser knows element is block. Time: ${performance.now().toFixed(1)}ms`);
+
+                // 此时，浏览器已经知道了 display: block 的存在。
+                // 但为了确保 "State A" (Opacity 0) 被彻底提交并作为过渡的起点，
+                // 我们需要等待下一帧。
+
+                // 3. [Frame N+1] 真正触发动画
+                console.log("rAF1 预定执行时间", t1, " 当前时间", performance.now().toFixed(1), "下一帧时间", (t1 + 1000 / 60).toFixed(1));
+                this.el.style.display = 'block';
+
+                requestAnimationFrame((t2) => {
+                    console.log(`[Frame 2] rAF Executed. Applying .active class. Time: ${performance.now().toFixed(1)}ms`);
+
+                    this.el.classList.add("active");
+                    // 状态变更：State A (Opacity 0) -> State B (Opacity 1)
+                    // 浏览器捕捉到差异 (Diff)，开始插值计算 (Interpolation)。
+                    console.log("rAF2 预定执行时间", t2, " 当前时间", performance.now().toFixed(1));
+                });
+            });
+
+            return new Promise(resolve => {
+                this.resolveHandler = resolve;
+            });
+        }
+
+        close() {
+            if (!this.isOpened) return;
+            this.isOpened = false;
+
+            // 1. 移除 Active 类 -> 触发 Opacity 1 => 0 的过渡
+            this.el.classList.remove("active");
+
+            // 2. 等待过渡结束后，再隐藏 DOM (display: none)
+            // { once: true } 自动移除监听器，这是现代浏览器最佳实践
+            this.el.addEventListener('transitionend', () => {
+                console.log(`[Event] Transition Ended. Setting display: none.`);
+                this.el.style.display = 'none';
+            }, { once: true });
+
+            if (this.resolveHandler) {
+                this.resolveHandler("Closed by user");
+                this.resolveHandler = null;
+            }
+        }
+        sleep(ms) {
+            const start = performance.now();
+            while (performance.now() - start < ms) { }
+        }
+    }
+
+    class TriggerButton {
+        constructor(popup, container) {
+            this.popup = popup;
+            const btn = document.createElement("button");
+            btn.innerText = "Open Popup (with Nested rAF)";
+            btn.style.padding = "10px 20px";
+            btn.style.fontSize = "16px";
+            btn.style.cursor = "pointer";
+
+            btn.addEventListener("click", async () => {
+                btn.disabled = true;
+                console.clear();
+                console.log("--- Start Sequence ---");
+                try {
+                    const res = await this.popup.show(`Request at: ${new Date().toLocaleTimeString()}`);
+                    console.log("Result:", res);
+                } catch (e) {
+                    console.warn(e);
+                } finally {
+                    btn.disabled = false;
+                }
+            });
+
+            (container || document.getElementById('app')).appendChild(btn);
+        }
+    }
+
+    // Init
+    new TriggerButton(new Popup());
+</script>
+
+</html>
