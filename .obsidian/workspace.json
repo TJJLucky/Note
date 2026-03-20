@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "NextJs/Web 渲染模式.md",
+                "file": "web优化/fetchpriority.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "Web 渲染模式"
+              "title": "fetchpriority"
             }
           }
         ],
@@ -172,6 +172,9 @@
   },
   "active": "cc9f378f09c428ce",
   "lastOpenFiles": [
+    "web优化/Link crossorigin.md",
+    "NextJs/Web 渲染模式.md",
+    "web优化/fetchpriority.md",
     "NextJs/Open Graph.md",
     "NextJs/文件夹路由.md",
     "NextJs/命令式编程与声明式编程.md",
@@ -205,9 +208,6 @@
     "web优化/前端无障碍.md",
     "web优化/字体和图片.md",
     "web优化/字体子集（Font Subsetting）.md",
-    "NextJs/Web 渲染模式.md",
-    "Javascript/JS模块化的各种规范CJS、AMD、CMD、UMD、ESM.md",
-    "web优化/图片响应式.md",
     "未命名.canvas",
     "Arithmetic Solution/picture/v2-b051cb0dd19b3f9131aa1aee17290a87_720w.png",
     "Arithmetic Solution/picture/Snipaste_2024-01-11_12-02-01.png",
