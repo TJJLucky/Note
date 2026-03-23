@@ -1,0 +1,574 @@
+<!doctype html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Flex 弹性盒模型学习场</title>
+    <style>
+        /* ============================================
+           CSS 变量：统一管理颜色和间距，便于全局调整
+           ============================================ */
+        :root {
+            --bg: #f7f5ef;
+            /* 页面背景色（米黄色） */
+            --panel: #ffffff;
+            /* 卡片背景色 */
+            --ink: #1f2937;
+            /* 主文字颜色 */
+            --muted: #4b5563;
+            /* 次要文字颜色 */
+            --primary: #0e7490;
+            /* 主色调（青色） */
+            --accent: #f59e0b;
+            /* 强调色（橙黄） */
+            --line: #d1d5db;
+            /* 边框/分割线颜色 */
+            --chip: #ecfeff;
+            /* 行内代码背景色 */
+        }
+
+        /* ============================================
+           基础重置：消除默认间距，确保盒模型一致
+           ============================================ */
+        * {
+            box-sizing: border-box;
+            /* width/height 包含 padding + border */
+        }
+
+        body {
+            margin: 0;
+            font-family: "Segoe UI", "Helvetica Neue", Helvetica, Arial, sans-serif;
+            color: var(--ink);
+            /* 背景加了径向渐变装饰，增加层次感 */
+            background:
+                radial-gradient(circle at 20% 10%, #e8fff8 0 18%, transparent 19%),
+                radial-gradient(circle at 90% 100%, #fff1d8 0 20%, transparent 21%),
+                var(--bg);
+            line-height: 1.5;
+        }
+
+        /* ============================================
+           页面布局：居中单列，最大宽度 1100px
+           ============================================ */
+        .page {
+            width: min(1100px, 92vw);
+            margin: 40px auto;
+            display: grid;
+            /* 使用 Grid 布局卡片区域 */
+            gap: 22px;
+            /* 卡片之间留 22px 间距 */
+        }
+
+        /* ============================================
+           卡片通用样式
+           ============================================ */
+        .card {
+            background: var(--panel);
+            border: 1px solid var(--line);
+            border-radius: 14px;
+            /* 圆角 14px */
+            padding: 18px;
+            box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+            /* 轻柔阴影 */
+        }
+
+        h1,
+        h2,
+        h3 {
+            margin: 0 0 10px;
+            line-height: 1.2;
+        }
+
+        h1 {
+            font-size: clamp(1.6rem, 2.8vw, 2.4rem);
+            color: #0f172a;
+        }
+
+        h2 {
+            font-size: 1.25rem;
+            color: #0f172a;
+        }
+
+        p,
+        li {
+            color: var(--muted);
+        }
+
+        /* 行内代码样式 */
+        code {
+            font-family: "Cascadia Code", Consolas, monospace;
+            background: var(--chip);
+            border: 1px solid #c7f1f9;
+            border-radius: 6px;
+            padding: 0.05rem 0.4rem;
+            color: #0f766e;
+        }
+
+        /* ============================================
+           示例区域网格布局（两列自适应）
+           ============================================ */
+        .grid {
+            display: grid;
+            gap: 16px;
+        }
+
+        .grid-2 {
+            /* 每列最小 280px，自动填满剩余空间 */
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        }
+
+        /* ============================================
+           演示盒子：虚线边框，包含一个或多个 flex 项目
+           hover 时轻微上浮，增强交互感
+           ============================================ */
+        .demo-box {
+            border: 2px dashed #94a3b8;
+            border-radius: 10px;
+            background: #f8fafc;
+            min-height: 130px;
+            padding: 10px;
+            margin-top: 8px;
+            transition: transform 220ms ease, box-shadow 220ms ease;
+        }
+
+        .demo-box:hover {
+            transform: translateY(-2px);
+            /* 向上平移 2px */
+            box-shadow: 0 8px 18px rgba(30, 41, 59, 0.16);
+            /* 加深阴影 */
+        }
+
+        /* ============================================
+           演示项目（flex 子元素），每个用不同颜色区分
+           ============================================ */
+        .item {
+            background: linear-gradient(140deg, #0891b2, #155e75);
+            /* 青色渐变 */
+            color: #fff;
+            border-radius: 8px;
+            padding: 10px;
+            min-width: 56px;
+            text-align: center;
+            font-weight: 600;
+        }
+
+        /* 第 2 个项目：红 */
+        .item:nth-child(2) {
+            background: linear-gradient(140deg, #ef4444, #7f1d1d);
+        }
+
+        /* 第 3 个项目：橙 */
+        .item:nth-child(3) {
+            background: linear-gradient(140deg, #f59e0b, #78350f);
+        }
+
+        /* 第 4 个项目：紫 */
+        .item:nth-child(4) {
+            background: linear-gradient(140deg, #8b5cf6, #4c1d95);
+        }
+
+        /* 第 5 个项目：绿 */
+        .item:nth-child(5) {
+            background: linear-gradient(140deg, #22c55e, #14532d);
+        }
+
+        /* ============================================
+           示例 1：主轴（水平）等间距对齐 + 垂直居中
+           - justify-content:space-between  两端对齐，中间均分
+           - align-items:center            交叉轴（垂直）居中
+           ============================================ */
+        .demo-1 {
+            display: flex;
+            gap: 10px;
+            /* 项目之间 10px 间距 */
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* ============================================
+           示例 2：换行 flex 布局
+           - flex-wrap:wrap    空间不足时自动换行
+           - align-content:flex-start  多行时行在顶部紧密排列
+           ============================================ */
+        .demo-2 {
+            display: flex;
+            flex-wrap: wrap;
+            /* 允许换行 */
+            gap: 10px;
+            align-content: flex-start;
+        }
+
+        /* 每个项目固定 120px 宽度，不伸缩 */
+        .demo-2 .item {
+            flex: 0 0 120px;
+            /* flex-grow:0, flex-shrink:0, flex-basis:120px */
+        }
+
+        /* ============================================
+           详细讲解区样式
+           ============================================ */
+        .flex-detail {
+            grid-column: 1 / -1;
+            /* 占满整行，不受 grid-2 两列限制 */
+        }
+
+        .detail-section {
+            margin-bottom: 16px;
+            padding-bottom: 16px;
+            border-bottom: 1px dashed var(--line);
+        }
+
+        .detail-section:last-child {
+            margin-bottom: 0;
+            padding-bottom: 0;
+            border-bottom: none;
+        }
+
+        .detail-section h3 {
+            color: var(--primary);
+            font-size: 1.05rem;
+            margin: 0 0 6px;
+        }
+
+        .detail-section ul {
+            margin: 6px 0;
+            padding-left: 20px;
+        }
+
+        .detail-section li {
+            color: var(--muted);
+            margin-bottom: 4px;
+        }
+
+        .note {
+            font-size: 0.9rem;
+            color: #64748b;
+            background: #f8fafc;
+            border-left: 3px solid var(--primary);
+            padding: 6px 12px;
+            border-radius: 0 6px 6px 0;
+            margin-top: 8px;
+        }
+
+        /* flex 简写对照表 */
+        .flex-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.92rem;
+            margin-top: 8px;
+        }
+
+        .flex-table th,
+        .flex-table td {
+            border: 1px solid var(--line);
+            padding: 7px 12px;
+            text-align: left;
+        }
+
+        .flex-table th {
+            background: #f0f9ff;
+            color: var(--ink);
+            font-weight: 600;
+        }
+
+        .flex-table td {
+            color: var(--muted);
+        }
+
+        .flex-table td:first-child code {
+            font-size: 0.88rem;
+        }
+
+        /* ============================================
+           示例 3：伸缩比例分配空间
+           - flex: 1 1 120px   基础 120px，可伸缩，最小 120px
+           - flex: 2 1 120px   拿 2 份空间（其他拿 1 份时）
+           - flex: 1 0 220px   不压缩（shrink:0），基础 220px
+           ============================================ */
+        .demo-3 {
+            display: flex;
+            gap: 10px;
+            align-items: stretch;
+            /* 交叉轴方向拉伸至父容器高度 */
+        }
+
+        /* 项目 A：平均分配剩余空间 */
+        .demo-3 .item:nth-child(1) {
+            flex: 1 0 120px;
+        }
+
+        /* 项目 B：拿 2 倍剩余空间 */
+        .demo-3 .item:nth-child(2) {
+            flex: 1 0 120px;
+        }
+
+        /* 项目 C：完全不压缩，基础 220px */
+        .demo-3 .item:nth-child(3) {
+            flex: 1 1 220px;
+            /* shrink:0 → 永远不小于 220px */
+        }
+
+        /* ============================================
+           示例 4：单项属性覆盖（order + align-self）
+           - order 改变排列顺序（数值越小越靠前）
+           - align-self 单独控制某个项目的交叉轴对齐
+           ============================================ */
+        .demo-4 {
+            display: flex;
+            gap: 10px;
+            height: 180px;
+            /* 固定高度，方便观察 align-self 效果 */
+            align-items: flex-start;
+            /* 默认所有项目顶部对齐 */
+        }
+
+        /* 项目 2：自己延伸到容器的底部（flex-end） */
+        .demo-4 .item:nth-child(2) {
+            align-self: flex-end;
+            order: 4;
+            /* 排到第 4 位（最后） */
+        }
+
+        /* 项目 4：order:-1 排到最前面（默认 order:0） */
+        .demo-4 .item:nth-child(4) {
+            order: -1;
+        }
+
+        /* ============================================
+           速查卡：容器属性 vs 子项属性
+           ============================================ */
+        .cheat {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 12px;
+            margin-top: 8px;
+        }
+
+        .chip {
+            border: 1px solid #bae6fd;
+            background: #f0f9ff;
+            color: #0c4a6e;
+            border-radius: 10px;
+            padding: 10px;
+            font-size: 0.95rem;
+        }
+
+        /* ============================================
+           练习题样式
+           ============================================ */
+        .task {
+            border-left: 4px solid var(--accent);
+            /* 左侧橙色竖线作为标记 */
+            padding-left: 12px;
+            margin-bottom: 12px;
+        }
+
+        .footer {
+            text-align: center;
+            color: #64748b;
+            font-size: 0.92rem;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <main class="page">
+
+        <!-- 标题 + 学习目标 + 速查表 -->
+        <section class="card">
+            <h1>Flex 弹性盒模型学习场</h1>
+            <p>
+                目标：理解 <code>display: flex</code> 如何通过<strong>容器属性</strong>和<strong>子项属性</strong>控制布局。
+                先读规则文字，再对比每个区块下方的实时演示。
+            </p>
+            <div class="cheat">
+                <!-- 容器属性：写在 flex 容器上 -->
+                <div class="chip"><strong>容器属性：</strong>flex-direction, justify-content, align-items, flex-wrap, gap
+                </div>
+                <!-- 子项属性：写在 flex 子元素上 -->
+                <div class="chip"><strong>子项属性：</strong>flex-grow, flex-shrink, flex-basis, order, align-self</div>
+                <!-- 核心心智模型 -->
+                <div class="chip"><strong>核心模型：</strong>主轴（main axis）+ 交叉轴（cross axis）</div>
+            </div>
+        </section>
+
+        <!-- 示例区域：2 列自适应网格 -->
+        <section class="grid grid-2">
+
+            <!-- 示例 1：轴与对齐 -->
+            <article class="card">
+                <h2>1) 轴与对齐</h2>
+                <p>
+                    <code>justify-content</code> 沿<strong>主轴</strong>对齐项目。
+                    <code>align-items</code> 沿<strong>交叉轴</strong>对齐项目。
+                </p>
+                <p><code>display:flex; justify-content:space-between; align-items:center;</code></p>
+                <div class="demo-box demo-1">
+                    <div class="item">A</div>
+                    <div class="item">B</div>
+                    <div class="item">C</div>
+                </div>
+            </article>
+
+            <!-- 示例 2：换行 -->
+            <article class="card">
+                <h2>2) 自动换行</h2>
+                <p>
+                    <code>flex-wrap: wrap</code> 允许项目在空间不足时换到下一行。
+                </p>
+                <p><code>display:flex; flex-wrap:wrap; gap:10px;</code></p>
+                <div class="demo-box demo-2">
+                    <div class="item">1</div>
+                    <div class="item">2</div>
+                    <div class="item">3</div>
+                    <div class="item">4</div>
+                    <div class="item">5</div>
+                    <div class="item">6</div>
+                </div>
+            </article>
+
+            <!-- 示例 3：空间分配 -->
+            <article class="card">
+                <h2>3) 空间分配（flex）</h2>
+                <p>
+                    简写 <code>flex: grow shrink basis</code> 控制如何分配剩余空间。
+                </p>
+                <p><code>A: 1 1 120px（等分）  B: 2 1 120px（拿双份）  C: 1 0 220px（不压缩）</code></p>
+                <div class="demo-box demo-3">
+                    <div class="item">A</div>
+                    <div class="item">B</div>
+                    <div class="item">C</div>
+                </div>
+            </article>
+
+            <!-- 详细讲解：flex 三属性 -->
+            <article class="card flex-detail">
+                <h2>flex-grow / flex-shrink / flex-basis 详解</h2>
+
+                <div class="detail-section">
+                    <h3>flex-basis：初始大小（基准值）</h3>
+                    <p>
+                        <code>flex-basis</code> 指定项目的<strong>初始基准宽度</strong>，即在分配剩余空间之前项目的大小。
+                        类似（但不完全等于）<code>width</code>，但优先级更高。
+                    </p>
+                    <ul>
+                        <li><code>flex-basis: 200px</code> → 项目初始宽度 200px</li>
+                        <li><code>flex-basis: auto</code>（默认值）→ 按自身 <code>width</code> 或内容宽度计算</li>
+                        <li><code>flex-basis: 0</code> → 从 0 开始，完全依赖 grow/shrink 分配</li>
+                    </ul>
+                </div>
+
+                <div class="detail-section">
+                    <h3>flex-grow：扩展比例（如何瓜分剩余空间）</h3>
+                    <p>
+                        当所有项目的 <code>flex-basis</code> 之和 <strong>小于</strong> 容器宽度时，
+                        会有"剩余空间"。<code>flex-grow</code> 决定每个项目如何<strong>按比例</strong>拿走这些剩余空间。
+                    </p>
+                    <ul>
+                        <li><code>flex-grow: 0</code>（默认值）→ 不参与分配，保持 <code>flex-basis</code> 的宽度</li>
+                        <li><code>flex-grow: 1</code> → 参与平均分配（所有项目都 1，则平分剩余空间）</li>
+                        <li><code>flex-grow: 2</code> → 拿的剩余空间是 <code>grow:1</code> 项目的 2 倍</li>
+                    </ul>
+                    <p class="note">计算公式：项目宽度 = flex-basis + 剩余空间 × (自身grow / 所有项目grow之和)</p>
+                </div>
+
+                <div class="detail-section">
+                    <h3>flex-shrink：收缩比例（空间不足时如何压缩）</h3>
+                    <p>
+                        当所有项目的 <code>flex-basis</code> 之和 <strong>大于</strong> 容器宽度时，
+                        会产生"不足空间"。<code>flex-shrink</code> 决定每个项目<strong>按什么权重</strong>被压缩。
+                    </p>
+                    <ul>
+                        <li><code>flex-shrink: 0</code> → 禁止压缩，最小宽度为 <code>flex-basis</code>（即使溢出也不缩）</li>
+                        <li><code>flex-shrink: 1</code>（默认值）→ 按权重等比压缩</li>
+                        <li><code>flex-shrink: 2</code> → 压缩速度是 <code>shrink:1</code> 项目的 2 倍</li>
+                    </ul>
+                    <p class="note">计算公式：压缩量 = 不足空间 × (自身shrink × flex-basis / 加权总和)</p>
+                </div>
+
+                <div class="detail-section">
+                    <h3>flex 简写全家桶</h3>
+                    <table class="flex-table">
+                        <thead>
+                            <tr>
+                                <th>写法</th>
+                                <th>等价于</th>
+                                <th>说明</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>flex: 1</code></td>
+                                <td><code>1 1 0%</code></td>
+                                <td>均分剩余空间，常用于"等高自适应"列</td>
+                            </tr>
+                            <tr>
+                                <td><code>flex: auto</code></td>
+                                <td><code>1 1 auto</code></td>
+                                <td>可伸可缩，基准为自身 width</td>
+                            </tr>
+                            <tr>
+                                <td><code>flex: 0 0 200px</code></td>
+                                <td>—</td>
+                                <td>固定宽度，既不伸也不缩</td>
+                            </tr>
+                            <tr>
+                                <td><code>flex: 1 0 200px</code></td>
+                                <td>—</td>
+                                <td>基准 200px，可伸但不缩（常用于"最小宽度"保护）</td>
+                            </tr>
+                            <tr>
+                                <td><code>flex: 0 1 200px</code></td>
+                                <td>—</td>
+                                <td>基准 200px，可缩但不伸</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </article>
+
+            <!-- 示例 4：单项属性覆盖 -->
+            <article class="card">
+                <h2>4) 单项属性覆盖</h2>
+                <p>
+                    用 <code>order</code> 改变排列顺序，用 <code>align-self</code> 单独覆盖某个项目的交叉轴对齐。
+                </p>
+                <p><code>项目 4 order:-1（最前）  项目 2 align-self:flex-end（底部）</code></p>
+                <div class="demo-box demo-4">
+                    <div class="item">1</div>
+                    <div class="item">2</div>
+                    <div class="item">3</div>
+                    <div class="item">4</div>
+                </div>
+            </article>
+        </section>
+
+        <!-- 练习题 -->
+        <section class="card">
+            <h2>课后练习</h2>
+
+            <div class="task">
+                <h3>题目 A</h3>
+                <p>把 demo-1（示例 1）改为纵向排列（主轴变成垂直方向），并保持项目之间等间距。</p>
+            </div>
+
+            <div class="task">
+                <h3>题目 B</h3>
+                <p>在 demo-3（示例 3）中，让项目 C 永远不会被压缩，且最小宽度改为 260px。</p>
+            </div>
+
+            <div class="task">
+                <h3>题目 C</h3>
+                <p>在 demo-4（示例 4）中，只用 CSS（不修改 HTML）让项目 3 排在最前面。</p>
+            </div>
+
+            <p>提示：打开浏览器开发者工具直接编辑 CSS，分别在桌面端和窄屏（手机）宽度下测试效果。</p>
+        </section>
+
+        <p class="footer">可以复制这份文件，改造出你自己的 Flex 练习题。</p>
+    </main>
+</body>
+
+</html>
